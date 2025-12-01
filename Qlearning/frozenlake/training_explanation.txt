@@ -1,0 +1,45 @@
+FrozenLake Training Explanation
+=============================
+
+This directory contains the code and results for training a Q-learning agent on the FrozenLake-v1 environment.
+
+Files
+-----
+frozen_lake_train.py: The main training script.
+frozen_lake_eval.py: Script to evaluate the trained agent.
+frozen_lake4x4.pkl: The saved Q-table (pickle file) containing the learned values.
+frozen_lake4x4_training.png: A plot showing the cumulative rewards over training episodes.
+
+Training Details (frozen_lake_train.py)
+---------------------------------------
+The agent was trained using the Q-learning algorithm on the 4x4 slippery map.
+
+Hyperparameters:
+- Episodes: 30,000
+- Learning Rate (Alpha): Starts at 0.1. When epsilon decays to 0, it switches to 0.001 to fine-tune.
+- Discount Factor (Gamma): 0.9
+- Epsilon (Exploration Rate): Starts at 1.0 (100% exploration) and decays by 0.00005 per episode until it reaches 0.
+
+Process:
+1. Initialization: A Q-table of size 16x4 (16 states, 4 actions) is initialized with zeros.
+2. Loop: For each episode:
+   - The agent chooses an action using an epsilon-greedy strategy (random exploration vs. exploitation of Q-values).
+   - The agent takes the action, observes the new state and reward.
+   - The Q-value for the previous state-action pair is updated using the Bellman equation:
+     Q(s,a) = Q(s,a) + alpha * (reward + gamma * max(Q(s',:)) - Q(s,a))
+   - Epsilon is decayed.
+3. Output:
+   - The final Q-table is saved to frozen_lake4x4.pkl.
+   - A plot of cumulative rewards is saved to frozen_lake4x4_training.png.
+
+Results
+-------
+The training process aims to maximize the win rate. The frozen_lake4x4_training.png shows the learning curve, where an upward trend indicates the agent is learning to reach the goal more frequently.
+
+Evaluation Results:
+Total Wins: 732
+Win Rate: 73.20% (over 1000 episodes)
+
+Standard Benchmark:
+The environment is considered "solved" when the agent achieves a win rate of approximately 78% (0.78) over 100 episodes.
+Our current agent (73.20%) is performing very well, approaching the solved threshold.
