@@ -1,0 +1,36 @@
+SARSA FrozenLake Training Explanation
+===================================
+
+This directory contains the code and results for training a SARSA agent on the FrozenLake-v1 environment (4x4, Slippery).
+
+Files
+-----
+sarsa_train.py: The training script (On-policy SARSA).
+sarsa_eval.py: The evaluation script.
+sarsa_q_table.pkl: The saved Q-table.
+sarsa_frozen_lake_training.png: Plot of cumulative rewards.
+
+Algorithm: SARSA vs Q-Learning
+------------------------------
+- Q-Learning (Off-policy): Updates Q(s,a) using the max Q-value of the next state: max(Q(s',:)). It learns the optimal policy directly, assuming greedy action selection.
+- SARSA (On-policy): Updates Q(s,a) using the Q-value of the *actual* next action taken: Q(s',a'). It learns the value of the policy being followed (including exploration).
+
+Results
+-------
+Hyperparameters:
+- Episodes: 40,000
+- Learning Rate: 0.1
+- Discount Factor: 0.9
+- Epsilon Decay: 0.00005
+
+Performance Metrics:
+- Achieved Win Rate (Eval): 65.30% (Improved from 50.50% in previous run)
+- Comparison to Q-Learning: The initial Q-learning implementation achieved ~45% (untuned) and ~73% (tuned). SARSA achieved 65.30%.
+
+Analysis: Why is SARSA underperforming (65.30% vs 73.20%)?
+-----------------------------------------------------------
+1. Conservative Nature: SARSA is an on-policy algorithm, meaning it learns the value of the policy being followed, including the random exploration steps. This makes it "safer" but more conservative. It tends to avoid optimal paths that run close to holes if there's a risk of falling in during the exploration phase.
+
+2. Exploration Penalty: Q-learning is off-policy and assumes optimal future behavior (max Q), effectively ignoring the risk of random exploration steps. This allows it to find the theoretical optimal path faster, even if that path is riskier to traverse during the training phase.
+
+3. Convergence: With a 65.30% win rate, SARSA is performing well and has found a safe path. However, to match the aggressive optimality of Q-learning (which approaches the ~78% benchmark), SARSA might require significantly more training episodes or a more fine-tuned decay schedule to overcome its inherent caution.
