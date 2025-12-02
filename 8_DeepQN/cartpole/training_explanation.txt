@@ -1,0 +1,48 @@
+Deep Q-Learning (DQN) for CartPole-v1
+
+Algorithm Overview
+This implementation uses a Deep Q-Network (DQN) to solve the CartPole-v1 environment. 
+DQN approximates the Q-value function Q(s, a) using a neural network, allowing it to handle continuous state spaces like CartPole.
+
+Key Components
+1.  Neural Network: A simple Feed-Forward Neural Network with 3 fully connected layers.
+    -   Input: State vector (size 4)
+    -   Hidden Layers: 2 layers with 128 units each, ReLU activation.
+    -   Output: Q-values for each action (size 2: Left, Right).
+
+2.  Experience Replay: A replay buffer stores transitions (state, action, reward, next_state, done). 
+    -   This breaks the correlation between consecutive samples, stabilizing training.
+    -   We sample random batches (size 64) from the buffer to train the network.
+
+3.  Target Network: A separate network is used to calculate the target Q-values.
+    -   This network's weights are frozen and updated only periodically (every 10 episodes) to match the policy network.
+    -   This prevents the "moving target" problem and improves stability.
+
+4.  Epsilon-Greedy Policy: Used for exploration.
+    -   The agent takes a random action with probability epsilon, and the best action (greedy) with probability 1-epsilon.
+    -   Epsilon decays from 1.0 to 0.01 over time.
+
+Hyperparameters
+-   Learning Rate: 0.001
+-   Gamma (Discount Factor): 0.99
+-   Batch Size: 64
+-   Memory Size: 10000
+-   Target Update Frequency: Every 10 episodes
+-   Epsilon Decay: 0.995 per episode
+
+Training Process
+The agent interacts with the environment, stores experiences in the replay buffer, and learns by minimizing the Mean Squared Error (MSE) between the predicted Q-values and the target Q-values (Bellman equation).
+
+Expected Results
+-   Reward Structure: The agent gets +1 reward for every step the pole remains upright.
+-   Max Reward: 
+    -   CartPole-v0: Max 200 steps.
+    -   CartPole-v1: Max 500 steps.
+-   Solved Criteria: 
+    -   Technically, CartPole-v1 is considered solved when the average reward is >= 475.0 over 100 consecutive trials.
+    -   However, achieving > 195.0 is often cited as a baseline success criteria (legacy from v0).
+    -   Our agent achieving ~330 means it is balancing for 330 steps, which is significantly better than the v0 limit but has room to reach the perfect 500.
+
+Performance Summary
+-   Ideal Average Reward: 500.0 (Max possible for v1)
+-   Achieved Average Reward: 332.10 (over 10 evaluation episodes)
