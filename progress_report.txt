@@ -1,0 +1,77 @@
+Weekly Progress Report
+Date Range: November 26, 2025 - December 03, 2025
+Subject: Reinforcement Learning & Gymnasium Implementation Progress
+Repository: https://github.com/MRMADMAX217/Gymnasium
+Mohan Kumar K
+
+1. Executive Summary
+
+Over the past week, I have focused on mastering the fundamentals of Reinforcement Learning (RL) and progressing to Deep RL architectures. I have successfully implemented multiple algorithms from scratch, applied them to standard Gymnasium environments, and achieved "solved" status on complex tasks like CartPole and LunarLander.
+
+I kindly request you to review the training files, logs, and source code included in the repository for a thorough verification of the results and a clearer understanding of the implementation details
+2. Topics Completed
+
+I have covered the following core concepts and practical implementations:
+
+2.1. Core Concepts
+   - RL Basics: Mastered the interaction loop between Environment and Agent, including handling Rewards and Episodes.
+   - Spaces: Gained proficiency in working with Discrete and Box (continuous) Action and Observation spaces.
+   - Gymnasium Usage: Standardized usage of the Gymnasium library for environment instantiation and interaction.
+   - Training Loops: Implemented custom training loops, managing gradient descent and optimization steps manually.
+
+2.2. Algorithms Implemented
+   - Q-Learning (Tabular): Implemented for discrete state spaces.
+   - DQN (Deep Q-Network): Transitioned to using Neural Networks for function approximation.
+   - Double DQN: Implemented to mitigate Q-value overestimation bias.
+   - Dueling DQN: Implemented to separate state-value and advantage estimation for better stability.
+
+2.3. Key Techniques
+   - Replay Buffer: Implemented experience replay to break data correlation and stabilize training.
+   - Target Networks: Used frozen target networks to prevent moving target instability during loss calculation.
+   - Visualization: Created plotting pipelines to track rewards and loss over time.
+
+3. Implementation Highlights (Evidence of Progress)
+
+The following results demonstrate the successful application of the topics listed above, with specific details on the challenges and solutions for each:
+
+   - Blackjack-v1 (Q-Learning): SOLVED.
+     Achieved ~44.2% win rate. The main challenge was high variance in rewards. I addressed this by tuning the epsilon decay schedule to allow for longer exploration, which stabilized the learning process.
+
+   - FrozenLake-v1 (Q-Learning): NEAR SOLVED.
+     Achieved 73.2% win rate on the slippery 4x4 grid. The agent learned to navigate the uncertain environment by maximizing future expected rewards, effectively finding the safest path despite the slippery mechanics.
+
+   - Taxi-v3 (Q-Learning): LOGIC LEARNED.
+     Achieved 91.4% success rate. The agent successfully learned the complex sequence of picking up and dropping off passengers. I optimized the penalty structure to discourage the agent from taking illegal actions, which significantly improved the success rate.
+
+   - CartPole-v1 (Double DQN): PERFECTLY SOLVED.
+     Achieved max reward of 500.0. Standard DQN struggled to consistently reach the max score due to overestimating Q-values. Implementing Double DQN decoupled the action selection from evaluation, leading to a stable and perfect performance.
+
+   - LunarLander-v2 (Dueling DQN): SOLVED.
+     Achieved >200 average reward. This environment requires precise thrust control. The Dueling DQN architecture helped the agent distinguish between valuable states (hovering) and valuable actions, allowing it to land efficiently and safely.
+
+4. Future Roadmap
+
+To further advance my RL expertise, I have outlined the following learning path:
+
+4.1. Algorithms Left
+   - REINFORCE: Policy Gradient method.
+   - A2C (Advantage Actor-Critic): Hybrid value/policy method.
+   - PPO (Proximal Policy Optimization): State-of-the-art policy gradient method.
+
+4.2. Advanced Concepts
+   - Vectorized Environments: Running multiple environments in parallel for faster training.
+   - Gymnasium Wrappers: Modifying environment inputs/outputs cleanly.
+   - Frame Stacking & Preprocessing: Handling visual inputs (e.g., for Atari).
+   - Atari Environments: Scaling up to complex visual games.
+   - Reward Shaping: Designing custom reward signals to guide learning.
+
+4.3. Custom Environments
+   - Build a custom Gymnasium environment from scratch.
+   - Define custom Observation and Action spaces.
+   - Implement custom Reward functions.
+
+4.4. Advanced / Optional
+   - Model-based RL: Learning a model of the environment dynamics.
+   - Multi-agent RL: Training multiple agents to interact/compete.
+   - Hierarchical RL: Learning policies at different temporal scales.
+   - Meta-RL: Learning to learn.
