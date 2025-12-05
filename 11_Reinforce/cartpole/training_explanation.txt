@@ -1,0 +1,29 @@
+Goal: Solve CartPole-v1 using the REINFORCE algorithm (Monte Carlo Policy Gradient).
+
+Algorithm Used: 
+REINFORCE is a policy gradient method that optimizes the policy directly. 
+It uses Monte Carlo sampling to estimate the expected return. 
+The policy is parameterized by a neural network (PolicyNetwork) that outputs a probability distribution over actions.
+The update rule is: theta <- theta + alpha * grad(log(pi(a|s))) * Gt, where Gt is the return (discounted sum of rewards).
+We subtract a baseline (mean of discounted rewards) and normalize by the standard deviation to reduce variance and improve stability.
+
+Network Architecture:
+- Input Layer: State dimension (4 for CartPole)
+- Hidden Layer: 128 units with ReLU activation
+- Output Layer: Action dimension (2 for CartPole) with Softmax activation (probabilities)
+
+Hyperparameters:
+- Learning Rate: 0.001 (Adam optimizer)
+- Gamma (Discount Factor): 0.99
+- Hidden Units: 128
+- Max Episodes: 1000
+
+Training Results:
+- The environment was solved in 313 episodes (hitting the average score of 195.0 over 100 episodes).
+- The agent demonstrated rapid learning, with scores increasing significantly after the first 200 episodes.
+- Final trained model saved as 'reinforce_cartpole.pth'.
+
+Evaluation:
+- The trained agent was evaluated for 5 episodes.
+- Scores achieved: 61.0, 176.0, 500.0, 263.0, 451.0.
+- The agent successfully balances the pole for long durations, often reaching the maximum score of 500.
