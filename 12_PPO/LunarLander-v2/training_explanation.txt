@@ -1,0 +1,30 @@
+Goal: Solve LunarLander-v3 using Proximal Policy Optimization (PPO).
+
+Algorithm Used:
+PPO is an on-policy gradient method that improves stability by limiting the update step size.
+It uses a clipped surrogate objective function to prevent large policy updates that could degrade performance.
+We implemented an Actor-Critic architecture where:
+- The Actor outputs action probabilities.
+- The Critic estimates the value function (expected return) to compute advantages.
+
+Network Architecture:
+- Shared or Separate Actor/Critic Networks:
+  - Actor: 8 (Input) -> 64 -> 64 -> 4 (Action Probabilities)
+  - Critic: 8 (Input) -> 64 -> 64 -> 1 (Value Estimate)
+- Activation: Tanh
+- Optimization: Adam
+
+Hyperparameters:
+- Learning Rate: 0.0003
+- Gamma: 0.99
+- PPO Clip Epsilon: 0.2
+- Update Epochs: 4
+- Time Horizon: 2048 steps
+
+Training Metrics:
+- The training process collects trajectories for 2048 steps and then performs PPO updates.
+- Initial performance is expected to be low (negative rewards) as the lander learns to control its thrusters.
+- The environment is considered solved when the average score over 100 episodes exceeds 200.
+- Current Status: Training is running. Early episodes show negative rewards (e.g., -46 av @ ep 200) as expected, but the agent should improve to positive scores > 200.
+
+Evaluation code `ppo_eval.py` is provided to visualize the trained agent.

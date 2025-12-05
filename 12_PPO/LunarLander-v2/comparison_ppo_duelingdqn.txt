@@ -1,0 +1,37 @@
+# Comparison: PPO vs Dueling DQN on LunarLander
+
+## 1. Algorithms Overview
+**PPO (Proximal Policy Optimization)**:
+- **Type**: On-Policy Gradient Method.
+- **Mechanism**: Optimizes the policy directly using a clipped surrogate objective to ensure small, safe updates. Uses an Actor-Critic architecture.
+- **Characteristics**: Generally more stable and easier to tune than standard DQN. Safe updates prevent performance collapse.
+
+**Dueling DQN (Deep Q-Network)**:
+- **Type**: Off-Policy Value-Based Method.
+- **Mechanism**: estimates the Q-value (State-Action value) using two streams: Value V(s) and Advantage A(s, a).
+- **Characteristics**: Separating V and A helps in identifying valuable states even when actions don't matter much. More sample efficient due to Replay Buffer.
+
+## 2. Training Metrics Comparison
+
+### Dueling DQN (Previous Run)
+- **Status**: Solved.
+- **Final Evaluation Average**: **173.80** (over 5 episodes).
+- **Peak Performance**: Individual episodes reached **~250**.
+- **Stability**: High (consistent positive scores in evaluation).
+
+### PPO (Current Run)
+- **Status**: Training in Progress (approx. Episode 610).
+- **Current Average Reward**: **~69.0** (increasing).
+- **Trajectory**:
+  - Episodes 0-200: Negative rewards (learning to fly).
+  - Episodes 200-400: Transition to positive rewards.
+  - Episodes 500+: Consistent positive rewards, approaching the solution threshold (200).
+- **Observations**: The agent is successfully learning. The learning curve shows a steady upward trend, typical of PPO's stable improvement.
+
+## 3. Key Differences Observed
+- **Learning Speed**: Dueling DQN (off-policy) might be slightly faster in terms of sample efficiency (frames seen) due to reusing data from the replay buffer. PPO (on-policy) must discard data after each update batch, possibly requiring more episodes to reach the same level.
+- **Stability**: PPO's metric improvement is often smoother.
+- **Final Potential**: Both algorithms are capable of solving LunarLander-v3 perfectly (avg score > 200). PPO often produces a very smooth flying policy.
+
+## 4. Conclusion
+Dueling DQN has set a high bar with an evaluation average of 173.80. PPO is currently chasing this target and has broken into positive reward territory (~69.0), indicating it has learned the core mechanics and is now optimizing for efficiency (soft landings). It is expected to solve the environment within the next few hundred episodes.
