@@ -1,0 +1,76 @@
+KeyDoorGrid-v0 Environment and Training Documentation
+
+--------------------------------------------------------------------------------
+1. Environment Overview
+--------------------------------------------------------------------------------
+Name: KeyDoorGrid-v0
+Type: 5x5 Grid World (Discrete)
+Goal: The agent must navigate to the Key location, pick it up, and then navigate to the Door location to exit.
+
+Key Components:
+- Agent: Represented as a blue circle. Starts at a random location.
+- Key: Represented as a yellow square. Fixed at position (1, 1).
+- Door: Represented as a red square. Fixed at position (3, 3).
+
+Rules:
+- The agent cannot walk through walls (the grid boundaries).
+- The agent must act sequentially: first get the Key, then go to the Door.
+- Reaching the Door without the Key has no effect (or a small step penalty continues).
+- The episode ends successfully when the Agent stands on the Door tile while holding the Key.
+
+--------------------------------------------------------------------------------
+2. Technical Specifications
+--------------------------------------------------------------------------------
+
+Observation Space (State Space):
+The state is represented as a single integer to make it compatible with Tabular Q-Learning.
+Formula: State_Index = ((Row * 5) + Col) * 2 + Has_Key_Status
+
+- Row: 0 to 4
+- Col: 0 to 4
+- Has_Key_Status: 0 (No) or 1 (Yes)
+- Total States: 5 * 5 * 2 = 50 unique states.
+
+Action Space:
+The agent can move in 4 cardinal directions.
+- 0: Move Right
+- 1: Move Up
+- 2: Move Left
+- 3: Move Down
+
+Reward Function:
+- Step Penalty: -0.1 per step. This motivates the agent to find the shortest path.
+- Key Pickup: +1.0. A small incentive to guide the agent to the sub-goal.
+- Goal Reached (Door + Key): +10.0. The primary reward for solving the task.
+
+--------------------------------------------------------------------------------
+3. Training Algorithm (Q-Learning)
+--------------------------------------------------------------------------------
+We use Tabular Q-Learning, a value-based reinforcement learning method.
+The agent maintains a Q-Table of shape (50, 4), which stores the expected future reward for taking a specific action in a specific state.
+
+Hyperparameters:
+- Episodes: 2000. Sufficient for the agent to explore all states multiple times.
+- Learning Rate (Alpha): 0.1. How much new information overrides old information.
+- Discount Factor (Gamma): 0.99. Importance of future rewards versus immediate rewards.
+- Epsilon (Exploration Rate): Starts at 1.0 (100% random moves) and decays by multiplying by 0.995 every episode until it reaches 0.01 (1% random moves).
+
+Process:
+1. The agent explores the grid randomly at first.
+2. When it accidentally hits the Key or Door, it receives a reward.
+3. This reward propagates back to previous states through the Bellman Equation update.
+4. Over time, the Q-Table converges to the optimal values, telling the agent exactly which way to go from any tile.
+
+--------------------------------------------------------------------------------
+4. Files and Usage
+--------------------------------------------------------------------------------
+
+File Structure:
+- key_door_env.py: The Gym environment logic and Pygame rendering code.
+- train.py: The training script that produces 'q_table.pkl'.
+- eval.py: The evaluation script that loads 'q_table.pkl' and visualizes the trained agent.
+
+How to Run:
+1. Open a terminal in this folder.
+2. Run "python train.py" to train the agent. You will see progress logs.
+3. Run "python eval.py" to watch the agent play. A window will open showing the agent moving.
