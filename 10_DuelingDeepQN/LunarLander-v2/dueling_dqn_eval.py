@@ -63,7 +63,7 @@ def evaluate():
 
     policy_net.eval()
     
-    num_episodes = 5
+    num_episodes = 10
     rewards = []
     
     for episode in range(num_episodes):

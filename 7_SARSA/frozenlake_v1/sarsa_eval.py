@@ -39,4 +39,4 @@ def run_eval(episodes, render=True):
     print(f"Win Rate: {wins/episodes:.2%}")
 
 if __name__ == '__main__':
-    run_eval(1000, render=False)
+    run_eval(1000, render=True)

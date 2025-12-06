@@ -13,7 +13,8 @@ gamma = 0.99
 lmbda = 0.95
 eps_clip = 0.2
 K_epochs = 4
-T_horizon = 2048
+T_horizon = 500 # Reduced per-env horizon, total batch = 500 * num_envs
+num_envs = 8
 
 class ActorCritic(nn.Module):
     def __init__(self, state_dim, action_dim):
@@ -46,7 +47,7 @@ class ActorCritic(nn.Module):
         probs = self.actor(state)
         dist = torch.distributions.Categorical(probs)
         action = dist.sample()
-        return action.item(), dist.log_prob(action)
+        return action.detach().cpu().numpy(), dist.log_prob(action).detach()
     
     def evaluate(self, state, action):
         probs = self.actor(state)
@@ -59,9 +60,9 @@ class ActorCritic(nn.Module):
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 def train():
-    env = gym.make('LunarLander-v3')
-    state_dim = env.observation_space.shape[0]
-    action_dim = env.action_space.n
+    env = gym.make_vec('LunarLander-v3', num_envs=num_envs, vectorization_mode='async')
+    state_dim = env.single_observation_space.shape[0]
+    action_dim = env.single_action_space.n
     
     model = ActorCritic(state_dim, action_dim).to(device)
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -69,14 +70,13 @@ def train():
     print_running_reward = 0
     print_freq = 10
     
-    time_step = 0
     i_episode = 0
     
     scores = []
     
-    while i_episode < 1000: # Max episodes
-        state, _ = env.reset()
-        current_ep_reward = 0
+    state, _ = env.reset()
+    
+    while i_episode < 1000: # Max updates
         
         states = []
         actions = []
@@ -87,7 +87,7 @@ def train():
         for t in range(T_horizon):
             action, logprob = model.act(state)
             next_state, reward, terminated, truncated, _ = env.step(action)
-            done = terminated or truncated
+            done = np.logical_or(terminated, truncated)
             
             states.append(state)
             actions.append(action)
@@ -96,37 +96,53 @@ def train():
             is_terminals.append(done)
             
             state = next_state
-            current_ep_reward += reward
-            time_step += 1
-            
-            if done:
-                break
+        
+        # Calculate approximate episode reward for logging (average over envs step-wise is noisy)
+        # Better: keep track of episode rewards per env
+        # For simplicity in this loop, we just take mean of rewards collected * scaler or just log total steps
+        # But we want "Episode Reward". 
+        # With vec envs, "Episode" concept is per-env.
+        # We can track completed episodes info if available, but for now let's just use average reward per step * 300?? No.
+        # Let's trust the standard moving average or just sum rewards for verification.
+        # Standard PPO impls often use `RecordEpisodeStatistics` wrapper.
+        # But let's stick to simple logging: average reward per batch.
+        
+        avg_batch_reward = np.sum(rewards) / num_envs 
         
         i_episode += 1
-        scores.append(current_ep_reward)
-        print_running_reward += current_ep_reward
         
         # Update PPO
-        states_tensor = torch.tensor(np.array(states), dtype=torch.float32).to(device)
-        actions_tensor = torch.tensor(np.array(actions), dtype=torch.float32).to(device)
-        old_logprobs_tensor = torch.stack(logprobs).to(device).detach()
+        # Flatten the batch: (T, N, D) -> (T*N, D)
+        states_tensor = torch.tensor(np.array(states), dtype=torch.float32).to(device) # (T, N, D)
+        states_tensor = states_tensor.view(-1, state_dim)
         
-        # Monte Carlo estimate of returns
+        actions_tensor = torch.tensor(np.array(actions), dtype=torch.float32).to(device) # (T, N)
+        actions_tensor = actions_tensor.view(-1)
+        
+        old_logprobs_tensor = torch.stack(logprobs).to(device).detach() # (T, N)
+        old_logprobs_tensor = old_logprobs_tensor.view(-1)
+        
+        # Monte Carlo estimate of returns - Vectorized
         rewards_list = []
-        discounted_reward = 0
-        for reward, is_terminal in zip(reversed(rewards), reversed(is_terminals)):
-            if is_terminal:
-                discounted_reward = 0
-            discounted_reward = reward + (gamma * discounted_reward)
+        discounted_reward = np.zeros(num_envs)
+        
+        for reward, done in zip(reversed(rewards), reversed(is_terminals)):
+            # If done, reset gae/return
+            # shape of reward: (N,), done: (N,)
+            discounted_reward = reward + (gamma * discounted_reward * (1 - done))
             rewards_list.insert(0, discounted_reward)
             
+        # Flatten rewards
+        rewards_tensor = torch.tensor(np.array(rewards_list), dtype=torch.float32).to(device) # (T, N)
+        rewards_tensor = rewards_tensor.view(-1)
+        
         # Normalizing the rewards
-        rewards_tensor = torch.tensor(rewards_list, dtype=torch.float32).to(device)
         rewards_tensor = (rewards_tensor - rewards_tensor.mean()) / (rewards_tensor.std() + 1e-7)
         
         # Optimize policy for K epochs
         for _ in range(K_epochs):
             # Evaluating old actions and values
+            # states_tensor is (T*N, D), actions_tensor is (T*N)
             logprobs, state_values, dist_entropy = model.evaluate(states_tensor, actions_tensor)
             state_values = torch.squeeze(state_values)
             
@@ -146,16 +162,15 @@ def train():
             loss.mean().backward()
             optimizer.step()
             
+        print_running_reward += avg_batch_reward
+        scores.append(avg_batch_reward)
+
         if i_episode % print_freq == 0:
             avg_reward = print_running_reward / print_freq
-            print(f'Episode {i_episode} \t Average Reward: {avg_reward}')
+            print(f'Update {i_episode} \t Average Batch Reward: {avg_reward:.2f}')
             print_running_reward = 0
             
-        if np.mean(scores[-100:]) >= 200:
-            print(f"Solved in {i_episode} episodes!")
-            torch.save(model.state_dict(), 'ppo_lunarlander.pth')
-            break
-            
+    torch.save(model.state_dict(), 'ppo_lunarlander.pth')
     plt.plot(scores)
     plt.xlabel("Episode")
     plt.ylabel("Score")
