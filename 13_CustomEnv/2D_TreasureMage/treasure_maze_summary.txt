@@ -1,0 +1,124 @@
+TreasureMaze Code Flow Documentation
+====================================
+
+This document details the logical execution flow of the TreasureMaze environment and its associated training and evaluation scripts.
+
+1. Environment Flow (treasure_maze_env.py)
+------------------------------------------
+The environment class `TreasureMazeEnv` inherits from `gymnasium.Env`.
+
+A. Initialization (__init__)
+   1.  **Parameters**: Accepts `render_mode` (human/rgb_array), `size` (grid dimension), and `fixed_maze` (boolean).
+   2.  **Space Definition**:
+       -   `action_space`: Discrete(4) -> [0: Left, 1: Right, 2: Up, 3: Down].
+       -   `observation_space`: Discrete(size * size) -> Flattened integer index of grid cells.
+   3.  **Variable Setup**: Initializes storage for agent location, treasure location, and the wall grid (`self._walls`).
+
+B. Reset Flow (reset)
+   1.  **State Clear**: Resets step counter to 0.
+   2.  **Maze Generation**:
+       -   Checks if `fixed_maze` is True and walls already exist.
+       -   If NOT fixed or first run, calls `_generate_maze()`.
+   3.  **Entity Placement**:
+       -   Identifies all "free" cells (indices where `_walls` is False).
+       -   Randomly selects an Agent start position from free cells.
+       -   Randomly selects a Treasure position from free cells (ensuring it's not the same as the Agent).
+   4.  **Return**: Computes initial observation (`_get_obs()`) and info dict (`_get_info()`) and returns them.
+
+C. Maze Generation Logic (_generate_maze)
+   1.  **Grid Init**: Start with a solid block of walls (all True).
+   2.  **Recursive Backtracker**:
+       -   Starts at (0,0).
+       -   Maintains a stack of visited cells.
+       -   While stack is not empty:
+           -   Look for unvisited neighbors 2 steps away (jumping over a wall).
+           -   If found:
+               -   Remove wall at neighbor.
+               -   Remove wall "between" current cell and neighbor.
+               -   Push neighbor to stack.
+           -   If no neighbors: Pop stack.
+   3.  **Result**: A perfect maze with a single path connecting any two points and no loops.
+
+D. Step Logic (step)
+   1.  **Input**: Receives an `action` (0-3).
+   2.  **Movement Calculation**:
+       -   Determines delta (change in coordinate) based on action.
+       -   Calculates `new_pos = current_pos + delta`.
+   3.  **Validation**:
+       -   Checks if `new_pos` is inside grid boundaries (0 to size-1).
+       -   Checks if `new_pos` is NOT a wall (`self._walls[new_pos] == False`).
+       -   If valid, updates `self._agent_location`. (If invalid, agent stays in place).
+   4.  **Status Calculation**:
+       -   `terminated`: True if `agent_location == treasure_location`.
+       -   `truncated`: True if `step_count >= max_steps`.
+       -   `reward`: +1.0 if terminated, else -0.01 (step penalty).
+   5.  **Return**: Returns (observation, reward, terminated, truncated, info).
+
+E. Rendering (render / _render_frame)
+   1.  **Setup**: Initializes Pygame window if `render_mode` is "human" and window doesn't exist.
+   2.  **Drawing**:
+       -   Fills background white.
+       -   Draws Black squares for Walls.
+       -   Draws Gold/Yellow square for Treasure.
+       -   Draws Blue circle for Agent.
+       -   Draws Grid lines.
+       -   Overlays Step Count text.
+   3.  **Display**: Updates the Pygame display window.
+
+--------------------------------------------------------------------------------
+
+2. Training Flow (q_train.py)
+-----------------------------
+Implements tabular Q-Learning.
+
+A. Setup
+   1.  **Hyperparameters**: Episodes=10000, Alpha=0.1, Gamma=0.99, Epsilon=1.0 (decaying).
+   2.  **Env Creation**: Instantiates `TreasureMazeEnv` with `fixed_maze=True`. This ensures the walls don't move between episodes, allowing the agent to learn the map.
+   3.  **Q-Table Init**: Creates a numpy array of zeros: `[NUM_STATES, NUM_ACTIONS]`.
+
+B. Training Loop
+   Iterates `episode` from 0 to `episodes`:
+   1.  **Reset**: Calls `env.reset()`.
+   2.  **Episode Execution** (While not done):
+       -   **Epsilon-Greedy Action**:
+           -   Generate random number.
+           -   If < epsilon: Pick Random Action.
+           -   Else: Pick `argmax(q_table[state])`.
+       -   **Step**: Execute action, get `next_state`, `reward`, `done`.
+       -   **Bellman Update**:
+           -   target = reward + gamma * max(Q[next_state])
+           -   error = target - Q[state, action]
+           -   Q[state, action] += alpha * error
+       -   **Transition**: `state = next_state`.
+   3.  **Decay**: Multiplies `epsilon` by `epsilon_decay`.
+   4.  **Log**: Prints total reward and current epsilon every 100 episodes.
+
+C. Finalization
+   1.  **Save**: Dumps the numpy `q_table` to `q_table.pkl` using pickle.
+
+--------------------------------------------------------------------------------
+
+3. Evaluation Flow (q_eval.py)
+------------------------------
+Visualizes the trained agent's performance.
+
+A. Setup
+   1.  **Load**: Reads `q_table.pkl`.
+   2.  **Env**: Creates `TreasureMazeEnv` with `render_mode="human"` and `fixed_maze=True`.
+
+B. Evaluation Loop
+   Iterates `episode` from 0 to 50:
+   1.  **Reset**: `env.reset()`.
+   2.  **Step Loop**:
+       -   **Smart Policy Selection**:
+           -   Standard Greedy would just take `argmax(Q)`.
+           -   **Safety Check**: The script sorts actions by Q-value. It iterates through them and picks the first one that is physically valid (not a wall/out of bounds). This prevents the agent from banging into walls even if Q-values are slightly imperfect.
+           -   **Loop Prevention**: Monitors visited states. If a state is visited >2 times, it forces a random *valid* move to break the loop.
+       -   **Execution**: `env.step(action)`.
+       -   **Render**: `env.render()` updates the screen.
+       -   **Check**: If terminated/truncated, break loop.
+   3.  **Reporting**: Prints "Success" or "Failed" along with step count and total reward.
+
+C. Cleanup
+   1.  Waits for user input to close the window.
+   2.  Calls `env.close()`.

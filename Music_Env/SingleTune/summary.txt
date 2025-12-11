@@ -1,0 +1,58 @@
+SingleTune Project Summary
+==========================
+
+Overview
+--------
+The SingleTune project is a custom Reinforcement Learning (RL) environment designed to train an agent to reproduce a specific musical sequence.
+This project uses Tabular Q-Learning to solve the environment.
+
+Files Description
+-----------------
+
+1. env.py
+   - Custom Gymnasium environment class `SingleTuneEnv`.
+   - Goal: Reproduce the target sequence [0, 1, 2, 3, 4, 5].
+   - Action Space: Discrete(6). Choose a number between 0 and 5.
+   - Reward: +1.0 for correct choice, -1.0 for incorrect choice.
+
+2. q_train.py
+   - The training script using Tabular Q-Learning.
+   - It initializes a Q-table (a dictionary mapping states to action values).
+   - It runs for 5000 episodes.
+   - During training, it explores (takes random actions) and exploits (takes best known actions) to learn the optimal path.
+   - At the end, it saves the learned Q-table to `q_table.pkl`.
+   - It also performs a quick internal check at the end to see if the agent learned the sequence.
+
+3. q_eval.py
+   - The evaluation script.
+   - It loads the saved `q_table.pkl`.
+   - It runs one episode where the agent always chooses the best action from the Q-table.
+   - It verifies if the agent can perfectly reproduce the target sequence from start to finish.
+
+Flow of Execution
+-----------------
+
+Step 1: Training
+----------------
+Command: python q_train.py
+
+What happens:
+- The Q-Learning algorithm starts with an empty knowledge base (empty Q-table).
+- The agent tries to guess numbers.
+- If it guesses correctly (e.g., Sequence so far is empty, it guesses 0), it gets a +1 reward.
+- If it guesses incorrectly, it gets -1.
+- It uses the Bellman Equation to update the "value" of that specific guess in that specific state.
+- Over thousands of episodes, the values propagate back. The agent learns that "At start, picking 0 is good", then "After 0, picking 1 is good", etc.
+- Finally, the Q-table is saved to a file called `q_table.pkl`.
+
+Step 2: Evaluation
+------------------
+Command: python q_eval.py
+
+What happens:
+- The script looks for `q_table.pkl`.
+- It loads the learned values.
+- The agent is placed in the environment.
+- It looks at the Q-table to make every decision.
+- It should output the perfect sequence: [0, 1, 2, 3, 4, 5].
+- The script prints "SUCCESS" if the output matches the target.

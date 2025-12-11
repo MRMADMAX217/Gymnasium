@@ -185,7 +185,6 @@ class KeyDoorEnv(gym.Env):
             return np.transpose(
                 np.array(pygame.surfarray.pixels3d(canvas)), axes=(1, 0, 2)
             )
-
     def close(self):
         if self.window is not None:
             pygame.display.quit()
